@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume - SkillTrack</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <i class="fas fa-graduation-cap"></i>
+            <span>SkillTrack</span>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="{{ url_for('dashboard') }}"><i class="fas fa-home"></i> Dashboard</a></li>
+            <li><a href="{{ url_for('profile') }}"><i class="fas fa-user"></i> Profile</a></li>
+            <li><a href="{{ url_for('resume') }}" class="active"><i class="fas fa-file-alt"></i> Resume</a></li>
+            <li><a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+        </ul>
+    </nav>
+    
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        <i class="fas fa-{{ 'check-circle' if category == 'success' else 'exclamation-circle' if category == 'danger' else 'info-circle' }}"></i>
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <div class="page-header">
+            <h1><i class="fas fa-file-alt"></i> My Resume</h1>
+            <p>Professional resume based on your profile</p>
+        </div>
+        
+        <div class="resume-actions">
+            <button class="btn btn-primary" onclick="printResume()">
+                <i class="fas fa-print"></i> Print / Save as PDF
+            </button>
+            <a href="{{ url_for('profile') }}" class="btn btn-secondary">
+                <i class="fas fa-edit"></i> Edit Profile
+            </a>
+        </div>
+        
+        <div class="resume-container" id="resumeContent">
+            <div class="resume-header">
+                <h1 class="resume-name">{{ user.full_name }}</h1>
+                <div class="resume-contact">
+                    {% if profile and profile.phone %}
+                        <span><i class="fas fa-phone"></i> {{ profile.phone }}</span>
+                    {% endif %}
+                    <span><i class="fas fa-envelope"></i> {{ user.email }}</span>
+                    {% if profile and profile.college %}
+                        <span><i class="fas fa-university"></i> {{ profile.college }}</span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            {% if profile and profile.career_goal %}
+                <div class="resume-section">
+                    <h2 class="resume-section-title"><i class="fas fa-bullseye"></i> Career Objective</h2>
+                    <p class="resume-text">{{ profile.career_goal }}</p>
+                </div>
+            {% endif %}
+            
+            {% if profile and (profile.department or profile.graduation_year) %}
+                <div class="resume-section">
+                    <h2 class="resume-section-title"><i class="fas fa-graduation-cap"></i> Education</h2>
+                    <div class="resume-item">
+                        <h3>{{ profile.department or 'Department' }}</h3>
+                        <p>{{ profile.college or 'College' }}{% if profile.graduation_year %} | Graduation: {{ profile.graduation_year }}{% endif %}</p>
+                    </div>
+                </div>
+            {% endif %}
+            
+            {% if skills %}
+                <div class="resume-section">
+                    <h2 class="resume-section-title"><i class="fas fa-tools"></i> Skills</h2>
+                    <div class="resume-skills">
+                        {% for skill in skills %}
+                            <span class="resume-skill-tag">{{ skill.skill_name }} ({{ skill.proficiency }}%)</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+            
+            {% if projects %}
+                <div class="resume-section">
+                    <h2 class="resume-section-title"><i class="fas fa-project-diagram"></i> Projects</h2>
+                    {% for project in projects %}
+                        <div class="resume-item">
+                            <h3>{{ project.project_name }}</h3>
+                            {% if project.technologies %}
+                                <p class="resume-tech">{{ project.technologies }}</p>
+                            {% endif %}
+                            {% if project.description %}
+                                <p class="resume-text">{{ project.description }}</p>
+                            {% endif %}
+                            {% if project.github_link %}
+                                <a href="{{ project.github_link }}" target="_blank" class="resume-link">
+                                    <i class="fas fa-github"></i> View on GitHub
+                                </a>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            
+            {% if certifications %}
+                <div class="resume-section">
+                    <h2 class="resume-section-title"><i class="fas fa-certificate"></i> Certifications</h2>
+                    {% for cert in certifications %}
+                        <div class="resume-item">
+                            <h3>{{ cert.certification_name }}</h3>
+                            <p>{{ cert.organization or 'Organization' }}{% if cert.date_earned %} | {{ cert.date_earned }}{% endif %}</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            
+            {% if internships %}
+                <div class="resume-section">
+                    <h2 class="resume-section-title"><i class="fas fa-briefcase"></i> Internships</h2>
+                    {% for internship in internships %}
+                        <div class="resume-item">
+                            <h3>{{ internship.role or 'Intern' }} at {{ internship.company }}</h3>
+                            {% if internship.duration %}
+                                <p class="resume-duration">{{ internship.duration }}</p>
+                            {% endif %}
+                            {% if internship.description %}
+                                <p class="resume-text">{{ internship.description }}</p>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            
+            {% if profile and profile.bio %}
+                <div class="resume-section">
+                    <h2 class="resume-section-title"><i class="fas fa-user"></i> About Me</h2>
+                    <p class="resume-text">{{ profile.bio }}</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

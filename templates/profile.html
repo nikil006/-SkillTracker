@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile - SkillTrack</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <i class="fas fa-graduation-cap"></i>
+            <span>SkillTrack</span>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="{{ url_for('dashboard') }}"><i class="fas fa-home"></i> Dashboard</a></li>
+            <li><a href="{{ url_for('profile') }}" class="active"><i class="fas fa-user"></i> Profile</a></li>
+            <li><a href="{{ url_for('resume') }}"><i class="fas fa-file-alt"></i> Resume</a></li>
+            <li><a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+        </ul>
+    </nav>
+    
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        <i class="fas fa-{{ 'check-circle' if category == 'success' else 'exclamation-circle' if category == 'danger' else 'info-circle' }}"></i>
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <div class="page-header">
+            <h1><i class="fas fa-user-circle"></i> My Profile</h1>
+            <p>Manage your personal information and career details</p>
+        </div>
+        
+        <div class="profile-content">
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-user-edit"></i> Personal Information</h2>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('profile') }}" class="profile-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="full_name">Full Name</label>
+                                <input type="text" id="full_name" name="full_name" value="{{ session.user_name }}" readonly>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="email">Email</label>
+                                <input type="email" id="email" name="email" value="{{ session.user_email }}" readonly>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="phone">Phone</label>
+                                <input type="tel" id="phone" name="phone" value="{{ profile.phone if profile else '' }}" placeholder="Enter phone number">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="college">College</label>
+                                <input type="text" id="college" name="college" value="{{ profile.college if profile else '' }}" placeholder="Enter college name">
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="department">Department</label>
+                                <input type="text" id="department" name="department" value="{{ profile.department if profile else '' }}" placeholder="Enter department">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="graduation_year">Graduation Year</label>
+                                <input type="text" id="graduation_year" name="graduation_year" value="{{ profile.graduation_year if profile else '' }}" placeholder="e.g., 2025">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="career_goal">Career Goal</label>
+                            <textarea id="career_goal" name="career_goal" rows="3" placeholder="Describe your career goal">{{ profile.career_goal if profile else '' }}</textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="bio">Short Bio</label>
+                            <textarea id="bio" name="bio" rows="4" placeholder="Tell us about yourself">{{ profile.bio if profile else '' }}</textarea>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Save Profile
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="card" id="skills-section">
+                <div class="card-header">
+                    <h2><i class="fas fa-tools"></i> Skills</h2>
+                    <button class="btn btn-primary btn-sm" onclick="toggleModal('addSkillModal')">
+                        <i class="fas fa-plus"></i> Add Skill
+                    </button>
+                </div>
+                <div class="card-body">
+                    {% if skills %}
+                        <div class="data-table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Skill Name</th>
+                                        <th>Category</th>
+                                        <th>Proficiency</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for skill in skills %}
+                                        <tr>
+                                            <td>{{ skill.skill_name }}</td>
+                                            <td>{{ skill.category or 'N/A' }}</td>
+                                            <td>
+                                                <div class="mini-progress">
+                                                    <div class="progress-fill" style="width: {{ skill.proficiency }}%"></div>
+                                                </div>
+                                                {{ skill.proficiency }}%
+                                            </td>
+                                            <td>
+                                                <button class="btn-icon btn-edit" onclick="editSkill({{ skill.id }}, '{{ skill.skill_name }}', '{{ skill.category or '' }}', {{ skill.proficiency }})">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <a href="{{ url_for('delete_skill', skill_id=skill.id) }}" class="btn-icon btn-delete" onclick="return confirmDelete('skill')">
+                                                    <i class="fas fa-trash"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="no-data">No skills added yet. Click "Add Skill" to get started!</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card" id="projects-section">
+                <div class="card-header">
+                    <h2><i class="fas fa-project-diagram"></i> Projects</h2>
+                    <button class="btn btn-primary btn-sm" onclick="toggleModal('addProjectModal')">
+                        <i class="fas fa-plus"></i> Add Project
+                    </button>
+                </div>
+                <div class="card-body">
+                    {% if projects %}
+                        <div class="data-table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Project Name</th>
+                                        <th>Description</th>
+                                        <th>Technologies</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for project in projects %}
+                                        <tr>
+                                            <td>{{ project.project_name }}</td>
+                                            <td>{{ project.description[:50] }}{{ '...' if project.description|length > 50 else '' }}</td>
+                                            <td>{{ project.technologies or 'N/A' }}</td>
+                                            <td>
+                                                <button class="btn-icon btn-edit" onclick="editProject({{ project.id }}, '{{ project.project_name }}', '{{ project.description or '' }}', '{{ project.technologies or '' }}', '{{ project.github_link or '' }}')">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <a href="{{ url_for('delete_project', project_id=project.id) }}" class="btn-icon btn-delete" onclick="return confirmDelete('project')">
+                                                    <i class="fas fa-trash"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="no-data">No projects added yet. Click "Add Project" to get started!</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card" id="certifications-section">
+                <div class="card-header">
+                    <h2><i class="fas fa-certificate"></i> Certifications</h2>
+                    <button class="btn btn-primary btn-sm" onclick="toggleModal('addCertificationModal')">
+                        <i class="fas fa-plus"></i> Add Certification
+                    </button>
+                </div>
+                <div class="card-body">
+                    {% if certifications %}
+                        <div class="data-table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Certification Name</th>
+                                        <th>Organization</th>
+                                        <th>Date Earned</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for cert in certifications %}
+                                        <tr>
+                                            <td>{{ cert.certification_name }}</td>
+                                            <td>{{ cert.organization or 'N/A' }}</td>
+                                            <td>{{ cert.date_earned or 'N/A' }}</td>
+                                            <td>
+                                                <button class="btn-icon btn-edit" onclick="editCertification({{ cert.id }}, '{{ cert.certification_name }}', '{{ cert.organization or '' }}', '{{ cert.date_earned or '' }}')">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <a href="{{ url_for('delete_certification', cert_id=cert.id) }}" class="btn-icon btn-delete" onclick="return confirmDelete('certification')">
+                                                    <i class="fas fa-trash"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="no-data">No certifications added yet. Click "Add Certification" to get started!</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card" id="internships-section">
+                <div class="card-header">
+                    <h2><i class="fas fa-briefcase"></i> Internships</h2>
+                    <button class="btn btn-primary btn-sm" onclick="toggleModal('addInternshipModal')">
+                        <i class="fas fa-plus"></i> Add Internship
+                    </button>
+                </div>
+                <div class="card-body">
+                    {% if internships %}
+                        <div class="data-table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Company</th>
+                                        <th>Role</th>
+                                        <th>Duration</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for internship in internships %}
+                                        <tr>
+                                            <td>{{ internship.company }}</td>
+                                            <td>{{ internship.role or 'N/A' }}</td>
+                                            <td>{{ internship.duration or 'N/A' }}</td>
+                                            <td>
+                                                <button class="btn-icon btn-edit" onclick="editInternship({{ internship.id }}, '{{ internship.company }}', '{{ internship.role or '' }}', '{{ internship.duration or '' }}', '{{ internship.description or '' }}')">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <a href="{{ url_for('delete_internship', internship_id=internship.id) }}" class="btn-icon btn-delete" onclick="return confirmDelete('internship')">
+                                                    <i class="fas fa-trash"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="no-data">No internships added yet. Click "Add Internship" to get started!</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Add Skill Modal -->
+    <div id="addSkillModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-plus"></i> Add Skill</h3>
+                <button class="modal-close" onclick="toggleModal('addSkillModal')">&times;</button>
+            </div>
+            <form method="POST" action="{{ url_for('add_skill') }}">
+                <div class="form-group">
+                    <label for="skill_name">Skill Name</label>
+                    <input type="text" id="skill_name" name="skill_name" required placeholder="e.g., Python">
+                </div>
+                <div class="form-group">
+                    <label for="category">Category</label>
+                    <input type="text" id="category" name="category" placeholder="e.g., Programming">
+                </div>
+                <div class="form-group">
+                    <label for="proficiency">Proficiency (%)</label>
+                    <input type="number" id="proficiency" name="proficiency" min="0" max="100" value="50">
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">
+                    <i class="fas fa-plus"></i> Add Skill
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Edit Skill Modal -->
+    <div id="editSkillModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-edit"></i> Edit Skill</h3>
+                <button class="modal-close" onclick="toggleModal('editSkillModal')">&times;</button>
+            </div>
+            <form method="POST" id="editSkillForm">
+                <input type="hidden" id="edit_skill_id" name="skill_id">
+                <div class="form-group">
+                    <label for="edit_skill_name">Skill Name</label>
+                    <input type="text" id="edit_skill_name" name="skill_name" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit_category">Category</label>
+                    <input type="text" id="edit_category" name="category">
+                </div>
+                <div class="form-group">
+                    <label for="edit_proficiency">Proficiency (%)</label>
+                    <input type="number" id="edit_proficiency" name="proficiency" min="0" max="100">
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">
+                    <i class="fas fa-save"></i> Update Skill
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Add Project Modal -->
+    <div id="addProjectModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-plus"></i> Add Project</h3>
+                <button class="modal-close" onclick="toggleModal('addProjectModal')">&times;</button>
+            </div>
+            <form method="POST" action="{{ url_for('add_project') }}">
+                <div class="form-group">
+                    <label for="project_name">Project Name</label>
+                    <input type="text" id="project_name" name="project_name" required placeholder="e.g., E-commerce Website">
+                </div>
+                <div class="form-group">
+                    <label for="project_description">Description</label>
+                    <textarea id="project_description" name="description" rows="3" placeholder="Describe your project"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="technologies">Technologies Used</label>
+                    <input type="text" id="technologies" name="technologies" placeholder="e.g., Python, Flask, SQLite">
+                </div>
+                <div class="form-group">
+                    <label for="github_link">GitHub Link</label>
+                    <input type="url" id="github_link" name="github_link" placeholder="https://github.com/username/project">
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">
+                    <i class="fas fa-plus"></i> Add Project
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Edit Project Modal -->
+    <div id="editProjectModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-edit"></i> Edit Project</h3>
+                <button class="modal-close" onclick="toggleModal('editProjectModal')">&times;</button>
+            </div>
+            <form method="POST" id="editProjectForm">
+                <input type="hidden" id="edit_project_id" name="project_id">
+                <div class="form-group">
+                    <label for="edit_project_name">Project Name</label>
+                    <input type="text" id="edit_project_name" name="project_name" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit_project_description">Description</label>
+                    <textarea id="edit_project_description" name="description" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="edit_technologies">Technologies Used</label>
+                    <input type="text" id="edit_technologies" name="technologies">
+                </div>
+                <div class="form-group">
+                    <label for="edit_github_link">GitHub Link</label>
+                    <input type="url" id="edit_github_link" name="github_link">
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">
+                    <i class="fas fa-save"></i> Update Project
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Add Certification Modal -->
+    <div id="addCertificationModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-plus"></i> Add Certification</h3>
+                <button class="modal-close" onclick="toggleModal('addCertificationModal')">&times;</button>
+            </div>
+            <form method="POST" action="{{ url_for('add_certification') }}">
+                <div class="form-group">
+                    <label for="certification_name">Certification Name</label>
+                    <input type="text" id="certification_name" name="certification_name" required placeholder="e.g., AWS Certified Developer">
+                </div>
+                <div class="form-group">
+                    <label for="organization">Organization</label>
+                    <input type="text" id="organization" name="organization" placeholder="e.g., Amazon Web Services">
+                </div>
+                <div class="form-group">
+                    <label for="date_earned">Date Earned</label>
+                    <input type="text" id="date_earned" name="date_earned" placeholder="e.g., Jan 2024">
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">
+                    <i class="fas fa-plus"></i> Add Certification
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Edit Certification Modal -->
+    <div id="editCertificationModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-edit"></i> Edit Certification</h3>
+                <button class="modal-close" onclick="toggleModal('editCertificationModal')">&times;</button>
+            </div>
+            <form method="POST" id="editCertificationForm">
+                <input type="hidden" id="edit_cert_id" name="cert_id">
+                <div class="form-group">
+                    <label for="edit_certification_name">Certification Name</label>
+                    <input type="text" id="edit_certification_name" name="certification_name" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit_organization">Organization</label>
+                    <input type="text" id="edit_organization" name="organization">
+                </div>
+                <div class="form-group">
+                    <label for="edit_date_earned">Date Earned</label>
+                    <input type="text" id="edit_date_earned" name="date_earned">
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">
+                    <i class="fas fa-save"></i> Update Certification
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Add Internship Modal -->
+    <div id="addInternshipModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-plus"></i> Add Internship</h3>
+                <button class="modal-close" onclick="toggleModal('addInternshipModal')">&times;</button>
+            </div>
+            <form method="POST" action="{{ url_for('add_internship') }}">
+                <div class="form-group">
+                    <label for="company">Company</label>
+                    <input type="text" id="company" name="company" required placeholder="e.g., Google">
+                </div>
+                <div class="form-group">
+                    <label for="role">Role</label>
+                    <input type="text" id="role" name="role" placeholder="e.g., Software Engineering Intern">
+                </div>
+                <div class="form-group">
+                    <label for="duration">Duration</label>
+                    <input type="text" id="duration" name="duration" placeholder="e.g., Jun 2024 - Aug 2024">
+                </div>
+                <div class="form-group">
+                    <label for="internship_description">Description</label>
+                    <textarea id="internship_description" name="description" rows="3" placeholder="Describe your responsibilities"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">
+                    <i class="fas fa-plus"></i> Add Internship
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Edit Internship Modal -->
+    <div id="editInternshipModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-edit"></i> Edit Internship</h3>
+                <button class="modal-close" onclick="toggleModal('editInternshipModal')">&times;</button>
+            </div>
+            <form method="POST" id="editInternshipForm">
+                <input type="hidden" id="edit_internship_id" name="internship_id">
+                <div class="form-group">
+                    <label for="edit_company">Company</label>
+                    <input type="text" id="edit_company" name="company" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit_role">Role</label>
+                    <input type="text" id="edit_role" name="role">
+                </div>
+                <div class="form-group">
+                    <label for="edit_duration">Duration</label>
+                    <input type="text" id="edit_duration" name="duration">
+                </div>
+                <div class="form-group">
+                    <label for="edit_internship_description">Description</label>
+                    <textarea id="edit_internship_description" name="description" rows="3"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">
+                    <i class="fas fa-save"></i> Update Internship
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

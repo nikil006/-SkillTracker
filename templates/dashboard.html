@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - SkillTrack</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <i class="fas fa-graduation-cap"></i>
+            <span>SkillTrack</span>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="{{ url_for('dashboard') }}" class="active"><i class="fas fa-home"></i> Dashboard</a></li>
+            <li><a href="{{ url_for('profile') }}"><i class="fas fa-user"></i> Profile</a></li>
+            <li><a href="{{ url_for('resume') }}"><i class="fas fa-file-alt"></i> Resume</a></li>
+            <li><a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+        </ul>
+    </nav>
+    
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        <i class="fas fa-{{ 'check-circle' if category == 'success' else 'exclamation-circle' if category == 'danger' else 'info-circle' }}"></i>
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <div class="page-header">
+            <h1>Welcome, {{ session.user_name }}! <i class="fas fa-hand-wave"></i></h1>
+            <p>Track your skills and career progress</p>
+        </div>
+        
+        <div class="stats-grid">
+            <div class="stat-card stat-skills">
+                <div class="stat-icon">
+                    <i class="fas fa-tools"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>{{ skills_count }}</h3>
+                    <p>Total Skills</p>
+                </div>
+            </div>
+            
+            <div class="stat-card stat-projects">
+                <div class="stat-icon">
+                    <i class="fas fa-project-diagram"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>{{ projects_count }}</h3>
+                    <p>Total Projects</p>
+                </div>
+            </div>
+            
+            <div class="stat-card stat-certifications">
+                <div class="stat-icon">
+                    <i class="fas fa-certificate"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>{{ certifications_count }}</h3>
+                    <p>Total Certifications</p>
+                </div>
+            </div>
+            
+            <div class="stat-card stat-internships">
+                <div class="stat-icon">
+                    <i class="fas fa-briefcase"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>{{ internships_count }}</h3>
+                    <p>Total Internships</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="dashboard-content">
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-bullseye"></i> Career Goal</h2>
+                </div>
+                <div class="card-body">
+                    <p class="career-goal">{{ career_goal }}</p>
+                    <a href="{{ url_for('profile') }}" class="btn btn-secondary btn-sm">
+                        <i class="fas fa-edit"></i> Update Goal
+                    </a>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-chart-line"></i> Skill Progress</h2>
+                </div>
+                <div class="card-body">
+                    {% if skills %}
+                        <div class="skill-progress-list">
+                            {% for skill in skills %}
+                                <div class="skill-progress-item">
+                                    <div class="skill-name">{{ skill.skill_name }}</div>
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" style="width: {{ skill.proficiency }}%"></div>
+                                    </div>
+                                    <div class="progress-value">{{ skill.proficiency }}%</div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="no-data">No skills added yet. <a href="{{ url_for('profile') }}">Add your first skill!</a></p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-bolt"></i> Quick Actions</h2>
+                </div>
+                <div class="card-body">
+                    <div class="quick-actions">
+                        <a href="{{ url_for('profile') }}#skills-section" class="quick-action-btn">
+                            <i class="fas fa-plus"></i>
+                            <span>Add Skill</span>
+                        </a>
+                        <a href="{{ url_for('profile') }}#projects-section" class="quick-action-btn">
+                            <i class="fas fa-plus"></i>
+                            <span>Add Project</span>
+                        </a>
+                        <a href="{{ url_for('profile') }}#certifications-section" class="quick-action-btn">
+                            <i class="fas fa-plus"></i>
+                            <span>Add Certification</span>
+                        </a>
+                        <a href="{{ url_for('profile') }}#internships-section" class="quick-action-btn">
+                            <i class="fas fa-plus"></i>
+                            <span>Add Internship</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
